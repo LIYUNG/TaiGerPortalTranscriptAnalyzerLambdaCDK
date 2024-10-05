@@ -38,13 +38,23 @@ export class PipelineStack extends cdk.Stack {
             }
         );
 
-        const prebuild = new ShellStep("Prebuild", {
+        // Building Lambda
+        const lambdaBuildStep = new CodeBuildStep("BuildLambda", {
+            buildEnvironment: {
+                buildImage: codebuild.LinuxBuildImage.AMAZON_LINUX_2_3
+            },
             input: python_source,
-            primaryOutputDirectory: "./",
-            commands: [
-                "pip install -r requirements.txt",
-                "ls -a" // Optionally, list files to check that dependencies are installed
-            ]
+            commands: ["variouscommands"],
+            partialBuildSpec: codebuild.BuildSpec.fromObject({
+                phases: {
+                    install: {
+                        "runtime-versions": {
+                            python: "3.9"
+                        },
+                        commands: ["python --version"]
+                    }
+                }
+            })
         });
 
         // Create the high-level CodePipeline
@@ -52,7 +62,7 @@ export class PipelineStack extends cdk.Stack {
             pipelineName: "TaiGerPortalTranscriptAnalyzerPipeline",
             synth: new ShellStep("Synth", {
                 input: source,
-                additionalInputs: { "../handlers": prebuild },
+                additionalInputs: { lambda: lambdaBuildStep.addOutputDirectory("lambda") },
                 commands: ["npm ci", "npm run build", "npx cdk synth", "ls -a ../handlers"]
             })
         });
