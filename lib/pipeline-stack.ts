@@ -40,8 +40,11 @@ export class PipelineStack extends cdk.Stack {
 
         const prebuild = new ShellStep("Prebuild", {
             input: python_source,
-            primaryOutputDirectory: "./src",
-            commands: ["pip install -r requirements.txt"]
+            primaryOutputDirectory: "./",
+            commands: [
+                "pip install -r requirements.txt",
+                "ls -a" // Optionally, list files to check that dependencies are installed
+            ]
         });
 
         // Create the high-level CodePipeline
